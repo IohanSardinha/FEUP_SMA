@@ -12,7 +12,7 @@ class Connection:
     to:    Stop
     speedLimit: int
     length: int
-    capacity: int
+    capacity: int = 99
     occupancy: int = 0
 
 @dataclass

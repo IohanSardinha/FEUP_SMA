@@ -2,29 +2,38 @@ from DataInitializer import busData, gridResolution, busNetwork
 from Model import BusNetworkModel
 from Bus import STATE
 import mesa
+from math import sin, cos
 
 def busPortrail(agent):
 
-    if agent.state == STATE.IN_STOP:
-        color = "red"
-        text_color = "black"
-    elif agent.state == STATE.BETWEEN_STOPS:
-        color = "black"
-        text_color = "white"
-    else:
-        color = "green"
-        text_color = "blackc"
-
     portrayal = {
         "Shape": "circle",
-        "Color": color,
         "Filled": "true",
         "Layer": 1,
         "r": 0.5,
         "text": agent.line,
-        "text_color": text_color
 
     }
+    
+    if agent.state == STATE.IN_STOP:
+        portrayal["Color"] = "red"
+        portrayal["text_color"] = "black"
+    elif agent.state == STATE.BETWEEN_STOPS:
+        portrayal["Color"] = "black"
+        portrayal["text_color"] = "white"
+    else:
+        portrayal["Color"] = "green"
+        portrayal["text_color"] = "black"
+
+    agentsInCell = agent.model.grid.get_cell_list_contents([agent.pos])
+    if len(agentsInCell) > 1:
+        a = ((agentsInCell.index(agent)+1)/len(agentsInCell))*360
+        portrayal["r"] = 0.4
+        r = 0.7
+        portrayal["xAlign"] = cos(a)*r
+        portrayal["yAlign"] = sin(a)*r
+
+    
     return portrayal
 
 networkPortrail = {

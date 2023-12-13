@@ -18,6 +18,9 @@ class BusNetworkModel(Model):
 
         self.datacollector = mesa.DataCollector()
 
+    def getBusesHeadingToStop(self, stop):
+        return [agent for agent in self.schedule.agents if agent.currentConnection.to == stop]
+
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
