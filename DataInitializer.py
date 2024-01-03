@@ -13,10 +13,10 @@ s9  = Stop("S09", 5,5)
 s10 = Stop("S10", 5,0)
 
 connections = [
-    Connection(s1,  s2, 1100, 1000),
-    Connection(s2,  s3, 1100, 1000),
-    Connection(s3,  s4, 1100, 1000),
-    Connection(s4,  s1, 1100, 1000),
+    Connection(s1,  s2, 1000, 1000),
+    Connection(s2,  s3, 1000, 1000),
+    Connection(s3,  s4, 1000, 1000),
+    Connection(s4,  s1, 1000, 1000),
  
     Connection(s3,  s5, 1100, 1000),
     Connection(s5,  s6, 1100, 1000),
@@ -85,4 +85,4 @@ b3nfo = {
 
 busData = [b1nfo, b2nfo, b3nfo]
 
-gridResolution = (max([connection._from.x for connection in connections])+1,max([connection._from.y for connection in connections])+1)
+gridResolution = [max([connection._from.x for connection in connections])+1, max([connection._from.y for connection in connections])+1]

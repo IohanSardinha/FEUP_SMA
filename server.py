@@ -71,6 +71,8 @@ class myGrid(mesa.visualization.CanvasGrid):
 
 grid = myGrid(busPortrail, gridResolution[0], gridResolution[1], 500, 500, [(networkPoints, networkPortrail)])
 
+speedViz = mesa.visualization.BarChartModule([{"Label":"speed"}],"agent")
+
 model_params = {
     "busData": busData,
     "gridRes": gridResolution,
@@ -78,7 +80,7 @@ model_params = {
 }
 
 server = mesa.visualization.ModularServer(
-    BusNetworkModel, [grid], "Bus Network Model", model_params
+    BusNetworkModel, [grid, speedViz], "Bus Network Model", model_params
 )
 server.port = 8521
 server.launch()
