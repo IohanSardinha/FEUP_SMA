@@ -5,8 +5,11 @@ from Network import Stop
 from mesa import Agent
 from enum import Enum
 from math import sqrt
+from QLearning import Qlearning
 
 STATE = Enum("STATE", ["BETWEEN_STOPS", "IN_STOP", "FINISHED"])
+ACTION_S1 = Enum("ACTION_S1", ["WAIT", "START"])
+ACTION_S2 = Enum("ACTION_S2", ["ACCELERATE", "DECELERATE", "KEEP_SPEED"])
 
 @dataclass
 class Schedule:
@@ -14,12 +17,13 @@ class Schedule:
 
 class Bus(Agent):
     scheduleIndex = 0
-    def __init__(self, unique_id: int, model: Model, line: str, schedule: Schedule) -> None:
+    def __init__(self, unique_id: int, model: Model, line: str, schedule: Schedule, qlearning: Qlearning) -> None:
         super().__init__(unique_id, model)
         self.line = line
         self.schedule = schedule
         self.state = STATE.IN_STOP
         self.lastStop = schedule.schedule[0][0]
+        self.qlearning = qlearning
 
         self.currentConnection = self.get_current_connection()
         self.progressInConnection = 0
