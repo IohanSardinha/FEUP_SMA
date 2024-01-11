@@ -2,7 +2,6 @@ from typing import Any
 from mesa import Model
 import mesa
 from Bus import Bus
-from DataInitializer import s3
 
 class BusNetworkModel(Model):
     def __init__(self, busData, gridRes, network) -> None:
