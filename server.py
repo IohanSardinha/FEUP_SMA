@@ -1,5 +1,5 @@
 from DataInitializer import LoadData
-from Model import BusNetworkModel
+from Model import BusNetworkModel, main as TrainQLearning
 from Bus import STATE
 import mesa
 from math import sin, cos
@@ -46,12 +46,6 @@ networkPortrail = {
     "text_color": "black"
 }
 
-networkPoints = []
-for connection in busNetwork.network:
-    networkPoints.append((connection._from.x,connection._from.y, connection._from.id))
-    networkPoints.append((connection.to.x,connection.to.y, connection.to.id))
-networkPoints = list(set(networkPoints))
-
 class myGrid(mesa.visualization.CanvasGrid):
     def __init__(self, portrayal_method, grid_width, grid_height, canvas_width=500, canvas_height=500, extra_representations=[]):
         super().__init__(portrayal_method, grid_width, grid_height, canvas_width, canvas_height)
@@ -71,18 +65,34 @@ class myGrid(mesa.visualization.CanvasGrid):
 
         return grid_state
 
-grid = myGrid(busPortrail, gridResolution[0], gridResolution[1], 500, 500, [(networkPoints, networkPortrail)])
 
-speedViz = mesa.visualization.BarChartModule([{"Label":"speed"}],"agent")
+def main():
 
-model_params = {
-    "busData": busData,
-    "gridRes": gridResolution,
-    "network": busNetwork
-}
+    agentsQLearnings = TrainQLearning()
 
-server = mesa.visualization.ModularServer(
-    BusNetworkModel, [grid, speedViz], "Bus Network Model", model_params
-)
-server.port = 8521
-server.launch()
+    model_params = {
+        "busData": busData,
+        "gridRes": gridResolution,
+        "network": busNetwork,
+        "agentsQLearnings": agentsQLearnings
+    }
+
+    networkPoints = []
+    for connection in busNetwork.network:
+        networkPoints.append((connection._from.x,connection._from.y, connection._from.id))
+        networkPoints.append((connection.to.x,connection.to.y, connection.to.id))
+    networkPoints = list(set(networkPoints))
+
+    grid = myGrid(busPortrail, gridResolution[0], gridResolution[1], 500, 500, [(networkPoints, networkPortrail)])
+
+    speedViz = mesa.visualization.BarChartModule([{"Label":"speed"}],"agent")
+
+    server = mesa.visualization.ModularServer(
+        BusNetworkModel, [grid, speedViz], "Bus Network Model", model_params
+    )
+    server.port = 8521
+    server.launch()
+    
+
+if __name__ == "__main__":
+    main()

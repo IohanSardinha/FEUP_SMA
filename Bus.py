@@ -5,8 +5,11 @@ from Network import Stop
 from mesa import Agent
 from enum import Enum
 from math import sqrt
+from QLearning import Qlearning
 
 STATE = Enum("STATE", ["BETWEEN_STOPS", "IN_STOP", "FINISHED"])
+ACTIONS_S1 = ["ACCELERATE", "DECELERATE", "KEEP_SPEED"]
+ACTIONS_S2 = ["WAIT", "START"]
 
 @dataclass
 class Schedule:
@@ -14,12 +17,13 @@ class Schedule:
 
 class Bus(Agent):
     scheduleIndex = 0
-    def __init__(self, unique_id: int, model: Model, line: str, schedule: Schedule) -> None:
+    def __init__(self, unique_id: int, model: Model, line: str, schedule: Schedule, qlearning: Qlearning) -> None:
         super().__init__(unique_id, model)
         self.line = line
         self.schedule = schedule
         self.state = STATE.IN_STOP
         self.lastStop = schedule.schedule[0][0]
+        self.qlearning = qlearning
 
         self.currentConnection = self.get_current_connection()
         self.progressInConnection = 0
@@ -79,7 +83,6 @@ class Bus(Agent):
     def wait(self):
         print("wait")
         
-
     def start_trip(self):
         print("start_trip")
 
@@ -126,6 +129,13 @@ class Bus(Agent):
         if self.progressInConnection >= 1:
             self.arrived()
 
+    def compute_reward(self, ETA, ScheduledTime):
+        return -1/(max(ScheduledTime - ETA, 0.00000001))
+    
+    def compute_state(self):
+        step = self.model.schedule.steps
+        return step * 2 if self.state == STATE.BETWEEN_STOPS else step*2 + 1
+    
     def advance(self):
         headingStop = self.schedule.schedule[self.scheduleIndex+1][0]
         ETA = self.get_ETA(headingStop)
@@ -134,20 +144,40 @@ class Bus(Agent):
         # if self in otherAgentsHeadingToSameStop: otherAgentsHeadingToSameStop.remove(self)
         otherAgentsHeadingToMyStop = self.model.getBusesHeadingToStopNow(self.lastStop)
         furthestAgentHeadingToStopETA = max([agent.get_ETA(self.lastStop) for agent in otherAgentsHeadingToMyStop]) if len(otherAgentsHeadingToMyStop) > 0 else None
+        
         print()
         print(f"> {str(self)}, ETA: {ETA}, ScheduledTime: {ScheduledTime}, scheduleIndex: {round(self.scheduleIndex, 3)}, action: ", end="")
         print([a.line for a in otherAgentsHeadingToMyStop])
+
+        self.qlearning.update_episolon(self.model.schedule.steps)
+
+        curr_state = self.compute_state()
+
         match self.state:
             case STATE.BETWEEN_STOPS:
-                if ETA + 1 > ScheduledTime:
-                    self.accelerate(10)
-                elif ETA + 1 < ScheduledTime:
-                    self.decelerate(10)
-                else:
-                    self.keep_speed()
+                actionIdx = self.qlearning.epsilon_greedy_policy(curr_state, len(ACTIONS_S1))
+                print("*********",ACTIONS_S1,actionIdx)
+                action = ACTIONS_S1[actionIdx]
 
+                match action: 
+                    case "ACCELERATE":
+                        self.accelerate(10)
+                    case "DECELERATE":
+                        self.decelerate(10)
+                    case "KEEP_SPEED":
+                        self.keep_speed()
+                    
             case STATE.IN_STOP:
-                if ETA + 1 < ScheduledTime or (furthestAgentHeadingToStopETA != None and furthestAgentHeadingToStopETA < ETA):
-                    self.wait()
-                else:
-                    self.start_trip()
+                actionIdx = self.qlearning.epsilon_greedy_policy(curr_state, len(ACTIONS_S2))
+                print("*********",ACTIONS_S2,actionIdx)
+                action = ACTIONS_S2[actionIdx]
+
+                match action:
+                    case "WAIT":
+                        self.wait()
+                    case "START":
+                        self.start_trip()
+        
+        new_state = self.compute_state()
+        reward = self.compute_reward(ETA, ScheduledTime)
+        self.qlearning.update_qtable(curr_state, actionIdx, new_state, reward)
