@@ -1,4 +1,4 @@
-from DataInitializer import busData, gridResolution, busNetwork
+from DataInitializer import LoadData
 from Model import BusNetworkModel, main as TrainQLearning
 from Bus import STATE
 import mesa
@@ -35,6 +35,8 @@ def busPortrail(agent):
 
     
     return portrayal
+
+busData, busNetwork, gridResolution = LoadData()
 
 networkPortrail = {
     "Shape": "circle",
