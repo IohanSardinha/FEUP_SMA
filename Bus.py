@@ -42,7 +42,7 @@ class Bus(Agent):
     def get_avg_speed(self, connection):
         dt = max(self.schedule.schedule[self.scheduleIndex+1][1] - self.model.schedule.steps,1)
         speed =  connection.length/dt
-        print("--->",self.line,dt, speed)
+        #print("--->",self.line,dt, speed)
         return speed
     
     def getConnectionTime(self, connection):
@@ -81,10 +81,11 @@ class Bus(Agent):
         return (int(x1+x/2), int(y1+y/2))
 
     def wait(self):
-        print("wait")
+        #print("wait")
+        pass
         
     def start_trip(self):
-        print("start_trip")
+        #print("start_trip")
 
         self.state = STATE.BETWEEN_STOPS
         self.progressInConnection = 0
@@ -97,7 +98,7 @@ class Bus(Agent):
         self.keep_speed()
 
     def arrived(self):
-        print("arrived")
+        #print("arrived")
         self.state = STATE.IN_STOP
         self.lastStop = self.currentConnection.to
         self.scheduleIndex += 1 
@@ -114,23 +115,23 @@ class Bus(Agent):
         self.model.grid.move_agent(self, (self.lastStop.x, self.lastStop.y))
 
     def accelerate(self, increase):
-        print("accelerate")
+        #print("accelerate")
         self.speed = min(self.currentConnection.speedLimit, self.speed + increase)
         self.keep_speed()
 
     def decelerate(self, decrease):
-        print("decelerate")
+        #print("decelerate")
         self.speed = max(1, self.speed - decrease)
         self.keep_speed()
 
     def keep_speed(self):
         self.progressInConnection += self.speed/self.currentConnection.length
-        print(f"keep_speed speed: {self.speed} {self.progressInConnection}")
+        #print(f"keep_speed speed: {self.speed} {self.progressInConnection}")
         if self.progressInConnection >= 1:
             self.arrived()
 
     def compute_reward(self, ETA, ScheduledTime):
-        return -1/(max(ScheduledTime - ETA, 0.00000001))
+        return 100-self.model.schedule.steps#1/(max(ScheduledTime - ETA, 0.00000001))
     
     def compute_state(self):
         step = self.model.schedule.steps
@@ -145,9 +146,9 @@ class Bus(Agent):
         otherAgentsHeadingToMyStop = self.model.getBusesHeadingToStopNow(self.lastStop)
         furthestAgentHeadingToStopETA = max([agent.get_ETA(self.lastStop) for agent in otherAgentsHeadingToMyStop]) if len(otherAgentsHeadingToMyStop) > 0 else None
         
-        print()
-        print(f"> {str(self)}, ETA: {ETA}, ScheduledTime: {ScheduledTime}, scheduleIndex: {round(self.scheduleIndex, 3)}, action: ", end="")
-        print([a.line for a in otherAgentsHeadingToMyStop])
+        #print()
+        #print(f"> {str(self)}, ETA: {ETA}, ScheduledTime: {ScheduledTime}, scheduleIndex: {round(self.scheduleIndex, 3)}, action: ", end="")
+        #print([a.line for a in otherAgentsHeadingToMyStop])
 
         self.qlearning.update_episolon(self.model.schedule.steps)
 
@@ -156,7 +157,7 @@ class Bus(Agent):
         match self.state:
             case STATE.BETWEEN_STOPS:
                 actionIdx = self.qlearning.epsilon_greedy_policy(curr_state, len(ACTIONS_S1))
-                print("*********",ACTIONS_S1,actionIdx)
+                #print("*********",ACTIONS_S1,actionIdx)
                 action = ACTIONS_S1[actionIdx]
 
                 match action: 
@@ -169,7 +170,7 @@ class Bus(Agent):
                     
             case STATE.IN_STOP:
                 actionIdx = self.qlearning.epsilon_greedy_policy(curr_state, len(ACTIONS_S2))
-                print("*********",ACTIONS_S2,actionIdx)
+                #print("*********",ACTIONS_S2,actionIdx)
                 action = ACTIONS_S2[actionIdx]
 
                 match action:

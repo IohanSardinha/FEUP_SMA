@@ -2,7 +2,7 @@ from typing import Any
 from mesa import Model
 import mesa
 from Bus import Bus, ACTIONS_S1, ACTIONS_S2
-from DataInitializer import busData, gridResolution, busNetwork
+from DataInitializer import LoadData
 from Config import *
 from QLearning import Qlearning
 
@@ -42,26 +42,28 @@ class BusNetworkModel(Model):
         return agents
 
     def step(self):
-        print()
-        print()
-        print(f"-----Step {self.schedule.steps}--------------------------------------------------------")
+        #print()
+        #print()
+        #print(f"-----Step {self.schedule.steps}--------------------------------------------------------")
         self.datacollector.collect(self)
         self.schedule.step()
         if len(self.schedule.agents) < 1 or self.schedule.steps >= self.max_steps:
             self.running = False
 
 def main():
+    busData, busNetwork, gridResolution = LoadData()
     agentsQLearnings = {busInfo["line"]:Qlearning(MAX_STEPS_PER_EPISODE*2, max(len(ACTIONS_S1), len(ACTIONS_S2)))  for busInfo in busData}
     for qlearning in agentsQLearnings.values():
         qlearning.initialize_q_table()
 
     for episode_n in range(N_EPISODES):
-        print(f"Episode {episode_n}")
+        print(f"{(episode_n/N_EPISODES)*100}%")
         model = BusNetworkModel(busData, gridResolution, busNetwork, agentsQLearnings)
         for _ in range(MAX_STEPS_PER_EPISODE):
             model.step()
             if model.running == False:
                 break
+    print(list(agentsQLearnings.values())[0].epsilon)
 
     return agentsQLearnings
 

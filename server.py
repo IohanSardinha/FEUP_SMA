@@ -36,7 +36,6 @@ def busPortrail(agent):
     
     return portrayal
 
-busData, busNetwork, gridResolution = LoadData()
 
 networkPortrail = {
     "Shape": "circle",
@@ -67,6 +66,8 @@ class myGrid(mesa.visualization.CanvasGrid):
 
 
 def main():
+
+    busData, busNetwork, gridResolution = LoadData()
 
     agentsQLearnings = TrainQLearning()
 
