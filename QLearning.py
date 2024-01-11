@@ -7,7 +7,8 @@ class Qlearning():
 
     state_space_size: int
     action_space_size: int        
-      
+    
+    epsilon: float = 0
     gamma: float = 0.95                            
     learning_rate: float = 0.7      
     max_epsilon:float = 1.0           
