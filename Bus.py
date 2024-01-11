@@ -139,9 +139,7 @@ class Bus(Agent):
         print([a.line for a in otherAgentsHeadingToMyStop])
         match self.state:
             case STATE.BETWEEN_STOPS:
-                if self.progressInConnection >= 1:
-                    self.arrived()
-                elif ETA + 1 > ScheduledTime:
+                if ETA + 1 > ScheduledTime:
                     self.accelerate(10)
                 elif ETA + 1 < ScheduledTime:
                     self.decelerate(10)
