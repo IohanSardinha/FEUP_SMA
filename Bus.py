@@ -7,6 +7,8 @@ from enum import Enum
 from math import sqrt
 from QLearning import Qlearning
 
+from Helper import debug
+
 STATE = Enum("STATE", ["BETWEEN_STOPS", "IN_STOP", "FINISHED"])
 ACTIONS_S1 = ["ACCELERATE", "DECELERATE", "KEEP_SPEED"]
 ACTIONS_S2 = ["WAIT", "START"]
@@ -42,7 +44,7 @@ class Bus(Agent):
     def get_avg_speed(self, connection):
         dt = max(self.schedule.schedule[self.scheduleIndex+1][1] - self.model.schedule.steps,1)
         speed =  connection.length/dt
-        #print("--->",self.line,dt, speed)
+        debug(f"---> {self.line},{dt}, {speed}", 3)
         return speed
     
     def getConnectionTime(self, connection):
@@ -81,11 +83,11 @@ class Bus(Agent):
         return (int(x1+x/2), int(y1+y/2))
 
     def wait(self):
-        #print("wait")
+        debug("wait",1)
         pass
         
     def start_trip(self):
-        #print("start_trip")
+        debug("start_trip",1)
 
         self.state = STATE.BETWEEN_STOPS
         self.progressInConnection = 0
@@ -98,7 +100,7 @@ class Bus(Agent):
         self.keep_speed()
 
     def arrived(self):
-        #print("arrived")
+        debug("arrived",1)
         self.state = STATE.IN_STOP
         self.lastStop = self.currentConnection.to
         self.scheduleIndex += 1 
@@ -115,18 +117,18 @@ class Bus(Agent):
         self.model.grid.move_agent(self, (self.lastStop.x, self.lastStop.y))
 
     def accelerate(self, increase):
-        #print("accelerate")
+        debug("accelerate",1)
         self.speed = min(self.currentConnection.speedLimit, self.speed + increase)
         self.keep_speed()
 
     def decelerate(self, decrease):
-        #print("decelerate")
+        debug("decelerate",1)
         self.speed = max(1, self.speed - decrease)
         self.keep_speed()
 
     def keep_speed(self):
         self.progressInConnection += self.speed/self.currentConnection.length
-        #print(f"keep_speed speed: {self.speed} {self.progressInConnection}")
+        debug(f"keep_speed speed: {self.speed} {self.progressInConnection}",1)
         if self.progressInConnection >= 1:
             self.arrived()
 
@@ -146,9 +148,9 @@ class Bus(Agent):
         otherAgentsHeadingToMyStop = self.model.getBusesHeadingToStopNow(self.lastStop)
         furthestAgentHeadingToStopETA = max([agent.get_ETA(self.lastStop) for agent in otherAgentsHeadingToMyStop]) if len(otherAgentsHeadingToMyStop) > 0 else None
         
-        #print()
-        #print(f"> {str(self)}, ETA: {ETA}, ScheduledTime: {ScheduledTime}, scheduleIndex: {round(self.scheduleIndex, 3)}, action: ", end="")
-        #print([a.line for a in otherAgentsHeadingToMyStop])
+        debug("",1)
+        debug(f"> {str(self)}, ETA: {ETA}, ScheduledTime: {ScheduledTime}, scheduleIndex: {round(self.scheduleIndex, 3)}, action: ", 1, ending="")
+        debug(str([a.line for a in otherAgentsHeadingToMyStop]),3)
 
         self.qlearning.update_episolon(self.model.schedule.steps)
 
@@ -157,7 +159,7 @@ class Bus(Agent):
         match self.state:
             case STATE.BETWEEN_STOPS:
                 actionIdx = self.qlearning.epsilon_greedy_policy(curr_state, len(ACTIONS_S1))
-                #print("*********",ACTIONS_S1,actionIdx)
+                debug(f"*********,{ACTIONS_S1},{actionIdx}",2)
                 action = ACTIONS_S1[actionIdx]
 
                 match action: 
@@ -170,7 +172,7 @@ class Bus(Agent):
                     
             case STATE.IN_STOP:
                 actionIdx = self.qlearning.epsilon_greedy_policy(curr_state, len(ACTIONS_S2))
-                #print("*********",ACTIONS_S2,actionIdx)
+                debug(f"*********,{ACTIONS_S2},{actionIdx}",2)
                 action = ACTIONS_S2[actionIdx]
 
                 match action:
