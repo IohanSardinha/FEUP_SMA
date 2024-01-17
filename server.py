@@ -36,7 +36,8 @@ def busPortrail(agent):
     
     return portrayal
 
-busData, busNetwork, gridResolution = LoadData()
+scenario = 3
+busData, busNetwork, gridResolution = LoadData(f"data/scenario{scenario}/stops.csv",f"data/scenario{scenario}/connections.csv", f"data/scenario{scenario}/lines.csv")
 
 networkPortrail = {
     "Shape": "circle",
