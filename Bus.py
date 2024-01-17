@@ -62,7 +62,7 @@ class Bus(Agent):
         return connections
 
     def get_schedule(self):
-        return self.schedule.schedule[self.scheduleIndex+1][1]
+        return self.schedule.schedule[self.scheduleIndex][1]
 
     def get_ETA(self, stop):
         now = self.model.schedule.steps
@@ -133,33 +133,26 @@ class Bus(Agent):
             self.arrived()
 
     def compute_reward(self, ETA, ScheduledTime):
-        return 100-self.model.schedule.steps#1/(max(ScheduledTime - ETA, 0.00000001))
-    
+        x = ScheduledTime - ETA
+        c1 = 200
+        c2 = 100
+        return -x + c1 if x >=0 else x + c2
+
     def compute_state(self):
         step = self.model.schedule.steps
         return step * 2 if self.state == STATE.BETWEEN_STOPS else step*2 + 1
     
     def advance(self):
-        headingStop = self.schedule.schedule[self.scheduleIndex+1][0]
+
+        headingStop = self.schedule.schedule[self.scheduleIndex][0]
         ETA = self.get_ETA(headingStop)
         ScheduledTime = self.get_schedule()
-        # otherAgentsHeadingToSameStop = self.model.getBusesHeadingToStopNow(headingStop)
-        # if self in otherAgentsHeadingToSameStop: otherAgentsHeadingToSameStop.remove(self)
-        otherAgentsHeadingToMyStop = self.model.getBusesHeadingToStopNow(self.lastStop)
-        furthestAgentHeadingToStopETA = max([agent.get_ETA(self.lastStop) for agent in otherAgentsHeadingToMyStop]) if len(otherAgentsHeadingToMyStop) > 0 else None
-        
-        debug("",1)
-        debug(f"> {str(self)}, ETA: {ETA}, ScheduledTime: {ScheduledTime}, scheduleIndex: {round(self.scheduleIndex, 3)}, action: ", 1, ending="")
-        debug(str([a.line for a in otherAgentsHeadingToMyStop]),3)
 
-        self.qlearning.update_episolon(self.model.schedule.steps)
 
         curr_state = self.compute_state()
-
         match self.state:
             case STATE.BETWEEN_STOPS:
                 actionIdx = self.qlearning.epsilon_greedy_policy(curr_state, len(ACTIONS_S1))
-                debug(f"*********,{ACTIONS_S1},{actionIdx}",2)
                 action = ACTIONS_S1[actionIdx]
 
                 match action: 
@@ -172,7 +165,6 @@ class Bus(Agent):
                     
             case STATE.IN_STOP:
                 actionIdx = self.qlearning.epsilon_greedy_policy(curr_state, len(ACTIONS_S2))
-                debug(f"*********,{ACTIONS_S2},{actionIdx}",2)
                 action = ACTIONS_S2[actionIdx]
 
                 match action:
@@ -180,7 +172,18 @@ class Bus(Agent):
                         self.wait()
                     case "START":
                         self.start_trip()
+
         
-        new_state = self.compute_state()
+        # otherAgentsHeadingToSameStop = self.model.getBusesHeadingToStopNow(headingStop)
+        # if self in otherAgentsHeadingToSameStop: otherAgentsHeadingToSameStop.remove(self)
+        #otherAgentsHeadingToMyStop = self.model.getBusesHeadingToStopNow(self.lastStop)
+        #furthestAgentHeadingToStopETA = max([agent.get_ETA(self.lastStop) for agent in otherAgentsHeadingToMyStop]) if len(otherAgentsHeadingToMyStop) > 0 else None
+        
         reward = self.compute_reward(ETA, ScheduledTime)
+        debug("",1)
+        debug(f"> {str(self)},reward: {reward}, ETA: {ETA}, ScheduledTime: {ScheduledTime}, scheduleIndex: {round(self.scheduleIndex, 3)}, action: ", 1, ending="")
+        debug(self.qlearning.Qtable[curr_state],1)
+        #debug(str([a.line for a in otherAgentsHeadingToMyStop]),3)
+
+        new_state = self.compute_state()
         self.qlearning.update_qtable(curr_state, actionIdx, new_state, reward)

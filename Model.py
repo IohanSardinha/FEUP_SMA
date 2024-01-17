@@ -6,6 +6,7 @@ from DataInitializer import LoadData
 from Config import *
 from QLearning import Qlearning
 from Helper import debug
+from matplotlib import pyplot as plt
 
 class BusNetworkModel(Model):
     def __init__(self, busData, gridRes, network, agentsQLearnings) -> None:
@@ -57,14 +58,35 @@ def main():
     for qlearning in agentsQLearnings.values():
         qlearning.initialize_q_table()
 
+    rewards = {busInfo["line"]:[] for busInfo in busData}
+
     for episode_n in range(N_EPISODES):
+        
         debug(f"{(episode_n/N_EPISODES)*100}%")
+        
+        for qlearning in agentsQLearnings.values():
+            qlearning.update_episolon(episode_n)
+
         model = BusNetworkModel(busData, gridResolution, busNetwork, agentsQLearnings)
         for _ in range(MAX_STEPS_PER_EPISODE):
             model.step()
             if model.running == False:
                 break
+        
+        for reward in rewards.keys():
+            table = agentsQLearnings[reward].Qtable
+            sum_rewards = sum([max(row) for row in table])
+            rewards[reward].append(sum_rewards)
+
     debug(list(agentsQLearnings.values())[0].epsilon)
+
+    for qlearning in agentsQLearnings.values():
+        debug(qlearning.Qtable, 3)
+
+    for name,lst in rewards.items():
+        plt.plot(range(len(lst)), lst)
+        plt.title(name)
+        plt.show()
 
     return agentsQLearnings
 
