@@ -90,8 +90,12 @@ def main(scenario = 1):
 
     for name,lst in rewards.items():
         plt.plot(range(len(lst)), lst)
-        plt.title(name)
-        plt.show()
+        plt.title(f"{name} sum of rewards by episode")
+        plt.xlabel("Episode")
+        plt.ylabel("Sum of Rewards")
+        plt.savefig(f"output/scenario{scenario}/{name}_reward.png")
+        #plt.show()
+        plt.clf()
 
     for bus in model.agents:
         schedule = pd.DataFrame([(stop.id, time) for stop, time in bus.schedule.schedule])
@@ -99,9 +103,10 @@ def main(scenario = 1):
         history = pd.merge(schedule, history, on=1, how="outer")
         history = history.fillna("-").sort_values(by=1).rename(columns={"0_x":"schedule", 1:"time", "0_y":"history"}).reset_index(drop=True)
         
-        history.to_csv(f"./output/{bus.line}_history.csv", index=False)
+        history.to_csv(f"./output/scenario{scenario}/{bus.line}_history.csv", index=False)
 
     return agentsQLearnings
 
 if __name__ == "__main__":
-    main(1)
+    for i in range(1,4):
+        main(i)

@@ -78,8 +78,6 @@ def main():
 
     agentsQLearnings = TrainQLearning(scenario)
 
-    return
-
     model_params = {
         "busData": busData,
         "gridRes": gridResolution,

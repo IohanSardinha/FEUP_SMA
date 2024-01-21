@@ -12,7 +12,7 @@ class Qlearning():
     gamma: float = 0.95                            
     learning_rate: float = 0.7      
     max_epsilon:float = 1.0           
-    min_epsilon:float = 0.05         
+    min_epsilon:float = 0.05
     decay_rate:float = 0.0001        
 
 
