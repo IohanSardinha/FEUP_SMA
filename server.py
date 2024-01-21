@@ -3,6 +3,7 @@ from Model import BusNetworkModel, main as TrainQLearning
 from Bus import STATE
 import mesa
 from math import sin, cos
+import pandas as pd
 
 def busPortrail(agent):
 
@@ -64,12 +65,20 @@ class myGrid(mesa.visualization.CanvasGrid):
 
         return grid_state
 
+def map_stops(step, schedule):
+    for stop, time in schedule:
+        if step == time:
+            return stop.id
+    return '-'
 
 def main():
 
-    busData, busNetwork, gridResolution = LoadData()
+    scenario = 1
+    busData, busNetwork, gridResolution = LoadData(f"data/scenario{scenario}/stops.csv",f"data/scenario{scenario}/connections.csv", f"data/scenario{scenario}/lines.csv")
 
-    agentsQLearnings = TrainQLearning()
+    agentsQLearnings = TrainQLearning(scenario)
+
+    return
 
     model_params = {
         "busData": busData,

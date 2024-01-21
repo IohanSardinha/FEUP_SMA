@@ -21,6 +21,7 @@ class Bus(Agent):
     scheduleIndex = 0
     def __init__(self, unique_id: int, model: Model, line: str, schedule: Schedule, qlearning: Qlearning) -> None:
         super().__init__(unique_id, model)
+        self.history = []
         self.line = line
         self.schedule = schedule
         self.state = STATE.IN_STOP
@@ -110,6 +111,10 @@ class Bus(Agent):
             self.state = STATE.FINISHED
             self.model.grid.move_agent(self, (self.lastStop.x, self.lastStop.y))
             self.model.schedule.remove(self)
+            history = (self.schedule.schedule[self.scheduleIndex][0].id, self.model.schedule.steps+1)
+            self.history.append(history)
+            history = ("(FINISH)", self.model.schedule.steps+2)
+            self.history.append(history)
             return
 
         self.currentConnection = self.get_current_connection()
@@ -132,11 +137,22 @@ class Bus(Agent):
         if self.progressInConnection >= 1:
             self.arrived()
 
-    def compute_reward(self, ETA, ScheduledTime):
-        x = ScheduledTime - ETA
-        c1 = 200
-        c2 = 100
-        return -x + c1 if x >=0 else x + c2
+    def compute_reward(self):
+        correct_schedilIndex = -1
+        for i, (stop, time) in enumerate(self.schedule.schedule):
+            correct_schedilIndex = i
+            if time > self.model.schedule.steps:
+                break
+
+        debug(f"scheduleIndex: {self.scheduleIndex}, correct:{correct_schedilIndex}, ",1)
+
+#        if self.state == STATE.IN_STOP:
+ #           if self.scheduleIndex == correct_schedilIndex-1: return 100
+  #          return 0
+        #if self.scheduleIndex == correct_schedilIndex-1: return 100
+        #if self.scheduleIndex < correct_schedilIndex: return 20
+        return 1/(abs(self.scheduleIndex - correct_schedilIndex)+1)
+
 
     def compute_state(self):
         step = self.model.schedule.steps
@@ -144,10 +160,9 @@ class Bus(Agent):
     
     def advance(self):
 
-        headingStop = self.schedule.schedule[self.scheduleIndex][0]
-        ETA = self.get_ETA(headingStop)
-        ScheduledTime = self.get_schedule()
+        history = (self.schedule.schedule[self.scheduleIndex][0].id if self.state == STATE.IN_STOP else "moving", self.model.schedule.steps)
 
+        self.history.append(history)
 
         curr_state = self.compute_state()
         match self.state:
@@ -173,17 +188,10 @@ class Bus(Agent):
                     case "START":
                         self.start_trip()
 
-        
-        # otherAgentsHeadingToSameStop = self.model.getBusesHeadingToStopNow(headingStop)
-        # if self in otherAgentsHeadingToSameStop: otherAgentsHeadingToSameStop.remove(self)
-        #otherAgentsHeadingToMyStop = self.model.getBusesHeadingToStopNow(self.lastStop)
-        #furthestAgentHeadingToStopETA = max([agent.get_ETA(self.lastStop) for agent in otherAgentsHeadingToMyStop]) if len(otherAgentsHeadingToMyStop) > 0 else None
-        
-        reward = self.compute_reward(ETA, ScheduledTime)
         debug("",1)
-        debug(f"> {str(self)},reward: {reward}, ETA: {ETA}, ScheduledTime: {ScheduledTime}, scheduleIndex: {round(self.scheduleIndex, 3)}, action: ", 1, ending="")
+        reward = self.compute_reward()
+        debug(f"> {str(self)}, action: ", 1, ending="")
         debug(self.qlearning.Qtable[curr_state],1)
-        #debug(str([a.line for a in otherAgentsHeadingToMyStop]),3)
 
         new_state = self.compute_state()
         self.qlearning.update_qtable(curr_state, actionIdx, new_state, reward)
