@@ -16,6 +16,7 @@ class Bus(Agent):
     scheduleIndex = 0
     def __init__(self, unique_id: int, model: Model, line: str, schedule: Schedule) -> None:
         super().__init__(unique_id, model)
+        self.history = []
         self.line = line
         self.schedule = schedule
         self.state = STATE.IN_STOP
@@ -86,7 +87,7 @@ class Bus(Agent):
         self.state = STATE.BETWEEN_STOPS
         self.progressInConnection = 0
         
-        self.speed = self.currentConnection.speedLimit#min(self.currentConnection.speedLimit, self.get_avg_speed(self.currentConnection))
+        self.speed = self.currentConnection.speedLimit
 
         newPosition = self.midlle_point(self.currentConnection._from.x, self.currentConnection.to.x, self.currentConnection._from.y, self.currentConnection.to.y)
         self.model.grid.move_agent(self, newPosition)
@@ -104,6 +105,12 @@ class Bus(Agent):
             self.state = STATE.FINISHED
             self.model.grid.move_agent(self, (self.lastStop.x, self.lastStop.y))
             self.model.schedule.remove(self)
+
+            history = (self.schedule.schedule[self.scheduleIndex][0].id, self.model.schedule.steps+1)
+            self.history.append(history)
+            history = ("(FINISH)", self.model.schedule.steps+2)
+            self.history.append(history)
+
             return
 
         self.currentConnection = self.get_current_connection()
@@ -127,11 +134,14 @@ class Bus(Agent):
             self.arrived()
 
     def advance(self):
+
+        history = (self.schedule.schedule[self.scheduleIndex][0].id if self.state == STATE.IN_STOP else "moving", self.model.schedule.steps)
+        self.history.append(history)
+
         headingStop = self.schedule.schedule[self.scheduleIndex+1][0]
         ETA = self.get_ETA(headingStop)
         ScheduledTime = self.get_schedule()
-        # otherAgentsHeadingToSameStop = self.model.getBusesHeadingToStopNow(headingStop)
-        # if self in otherAgentsHeadingToSameStop: otherAgentsHeadingToSameStop.remove(self)
+        
         otherAgentsHeadingToMyStop = self.model.getBusesHeadingToStopNow(self.lastStop)
         furthestAgentHeadingToStopETA = max([agent.get_ETA(self.lastStop) for agent in otherAgentsHeadingToMyStop]) if len(otherAgentsHeadingToMyStop) > 0 else None
         print()
